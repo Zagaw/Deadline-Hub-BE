@@ -9,6 +9,7 @@ import sequelize from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import deadlineRoutes from "./routes/deadlineRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
 
 // Setup __dirname for ES modules
@@ -29,10 +30,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/deadlines", deadlineRoutes);
+app.use("/api/comments", commentRoutes);
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("Deadline Management API is running...");
+  res.send("Deadline Management API with Comments is running...");
 });
 
 // Error middleware
@@ -43,13 +45,24 @@ sequelize.sync({ alter: true })
   .then(async () => {
     console.log("Database connected & tables created");
     
-    // Set up associations
-    const User = await import('./models/User.js').then(m => m.default);
-    const Deadline = await import('./models/Deadline.js').then(m => m.default);
+    // Import models
+    const User = (await import('./models/User.js')).default;
+    const Deadline = (await import('./models/Deadline.js')).default;
+    const Comment = (await import('./models/Comment.js')).default;
     
     // Define associations
     User.hasMany(Deadline, { foreignKey: 'userId', onDelete: 'CASCADE' });
     Deadline.belongsTo(User, { foreignKey: 'userId' });
+    
+    User.hasMany(Comment, { foreignKey: 'userId', onDelete: 'CASCADE' });
+    Comment.belongsTo(User, { foreignKey: 'userId' });
+    
+    Deadline.hasMany(Comment, { foreignKey: 'deadlineId', onDelete: 'CASCADE' });
+    Comment.belongsTo(Deadline, { foreignKey: 'deadlineId' });
+    
+    // Self-referential association for replies
+    Comment.belongsTo(Comment, { foreignKey: 'parentCommentId', as: 'parent' });
+    Comment.hasMany(Comment, { foreignKey: 'parentCommentId', as: 'replies' });
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
