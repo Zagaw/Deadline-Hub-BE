@@ -88,6 +88,7 @@ export const createDeadline = async (req, res) => {
 };
 
 // Get all deadlines for authenticated user
+// Get all deadlines for authenticated user
 export const getUserDeadlines = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -132,8 +133,18 @@ export const getUserDeadlines = async (req, res) => {
       }
     }
 
+    // Format the deadlines for frontend
+    const formattedDeadlines = deadlines.map(deadline => {
+      const deadlineObj = deadline.toJSON();
+      return {
+        ...deadlineObj,
+        dueDate: deadline.dueDate ? deadline.dueDate.toISOString().split('T')[0] : null,
+        dueTime: deadline.dueTime || '12:00:00'
+      };
+    });
+
     res.json({
-      deadlines,
+      deadlines: formattedDeadlines,
       total: count,
       page: parseInt(page),
       totalPages: Math.ceil(count / limit),
