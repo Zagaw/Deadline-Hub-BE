@@ -64,7 +64,7 @@ sequelize.sync({ alter: true })
     Comment.belongsTo(Comment, { foreignKey: 'parentCommentId', as: 'parent' });
     Comment.hasMany(Comment, { foreignKey: 'parentCommentId', as: 'replies' });
 
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
