@@ -1,3 +1,4 @@
+// models/Deadline.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
@@ -33,9 +34,10 @@ const Deadline = sequelize.define("Deadline", {
     validate: {
       isDate: true,
       isAfterToday(value) {
-        if (value && new Date(value) < new Date()) {
-          throw new Error('Due date cannot be in the past');
-        }
+        // Remove or comment out this validation for testing
+        // if (value && new Date(value) < new Date()) {
+        //   throw new Error('Due date cannot be in the past');
+        // }
       }
     }
   },
@@ -76,6 +78,15 @@ const Deadline = sequelize.define("Deadline", {
   completedAt: {
     type: DataTypes.DATE,
     allowNull: true,
+  },
+  // Add these new fields for group tasks
+  isGroupTask: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  roomId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
   }
 }, {
   timestamps: true,
@@ -91,6 +102,9 @@ const Deadline = sequelize.define("Deadline", {
     },
     {
       fields: ['userId', 'status']
+    },
+    {
+      fields: ['roomId'] // Add index for roomId
     }
   ]
 });

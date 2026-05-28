@@ -37,11 +37,13 @@ export const upload = multer({
   fileFilter: fileFilter
 });
 
-// Create a new deadline
+// controllers/deadlineController.js - Update the createDeadline function
 export const createDeadline = async (req, res) => {
   try {
-    const { title, description, dueDate, dueTime, priority } = req.body;
+    const { title, description, dueDate, dueTime, priority, isGroupTask, roomId } = req.body;
     const userId = req.user.id;
+
+    console.log('Received data:', { title, description, dueDate, dueTime, priority, isGroupTask, roomId }); // Debug log
 
     // Validate required fields
     if (!title || !dueDate || !dueTime) {
@@ -59,14 +61,27 @@ export const createDeadline = async (req, res) => {
       };
     }
 
-    // Create deadline
+    // Parse due date properly
+    let parsedDueDate;
+    try {
+      parsedDueDate = new Date(dueDate);
+      if (isNaN(parsedDueDate.getTime())) {
+        throw new Error('Invalid date');
+      }
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid due date format" });
+    }
+
+    // Create deadline with all fields
     const deadline = await Deadline.create({
       userId,
       title,
-      description,
-      dueDate: new Date(dueDate),
-      dueTime,
+      description: description || '',
+      dueDate: parsedDueDate,
+      dueTime: dueTime,
       priority: priority || 'medium',
+      isGroupTask: isGroupTask === 'true' || isGroupTask === true || false,
+      roomId: roomId || null,
       ...fileData
     });
 
@@ -83,12 +98,13 @@ export const createDeadline = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Create deadline error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
 // Get all deadlines for authenticated user
-// Get all deadlines for authenticated user
+// controllers/deadlineController.js - Update the getUserDeadlines function
 export const getUserDeadlines = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -139,7 +155,9 @@ export const getUserDeadlines = async (req, res) => {
       return {
         ...deadlineObj,
         dueDate: deadline.dueDate ? deadline.dueDate.toISOString().split('T')[0] : null,
-        dueTime: deadline.dueTime || '12:00:00'
+        dueTime: deadline.dueTime || '12:00:00',
+        isGroupTask: deadlineObj.isGroupTask || false,
+        roomId: deadlineObj.roomId || null
       };
     });
 
@@ -151,6 +169,7 @@ export const getUserDeadlines = async (req, res) => {
       currentPage: parseInt(page)
     });
   } catch (error) {
+    console.error('Get deadlines error:', error);
     res.status(500).json({ error: error.message });
   }
 };
